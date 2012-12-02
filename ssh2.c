@@ -597,7 +597,9 @@ PHP_FUNCTION(ssh2_auth_none)
 }
 /* }}} */
 
+const char *password_prompt="Password: ";
 char *password_for_kbd_callback;
+char *code_for_kbd_callback;
 
 static void kbd_callback(const char *name, int name_len,
 							const char *instruction, int instruction_len,
@@ -611,8 +613,13 @@ static void kbd_callback(const char *name, int name_len,
 	(void)instruction;
 	(void)instruction_len;
 	if (num_prompts == 1) {
-		responses[0].text = estrdup(password_for_kbd_callback);
-		responses[0].length = strlen(password_for_kbd_callback);
+		if (strncmp(prompts[0].text, password_prompt, prompts[0].length) == 0) {
+			responses[0].text = estrdup(password_for_kbd_callback);
+			responses[0].length = strlen(password_for_kbd_callback);
+		} else {
+			responses[0].text = estrdup(code_for_kbd_callback);
+			responses[0].length = strlen(code_for_kbd_callback);
+		}
 	}
 	(void)prompts;
 	(void)abstract;
@@ -637,6 +644,42 @@ PHP_FUNCTION(ssh2_auth_password)
 
 	userauthlist = libssh2_userauth_list(session, username, username_len);
 	password_for_kbd_callback = password;
+	if (strstr(userauthlist, "keyboard-interactive") != NULL) {
+		if (libssh2_userauth_keyboard_interactive(session, username, &kbd_callback) == 0) {
+			RETURN_TRUE;
+		}
+	}
+
+	/* TODO: Support password change callback */
+	if (libssh2_userauth_password_ex(session, username, username_len, password, password_len, NULL)) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Authentication failed for %s using password", username);
+		RETURN_FALSE;
+	}
+
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto bool ssh2_auth_password_twofactor(resource session, string username, string code, string password)
+ * Authenticate over SSH using a plain password
+ */
+PHP_FUNCTION(ssh2_auth_password_twofactor)
+{
+	LIBSSH2_SESSION *session;
+	zval *zsession;
+	char *username, *code, *password;
+	int username_len, code_len, password_len;
+	char *userauthlist;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rsss", &zsession, &username, &username_len, &code, &code_len, &password, &password_len) == FAILURE) {
+		return;
+	}
+
+	SSH2_FETCH_NONAUTHENTICATED_SESSION(session, zsession);
+
+	userauthlist = libssh2_userauth_list(session, username, username_len);
+	password_for_kbd_callback = password;
+	code_for_kbd_callback = code;
 	if (strstr(userauthlist, "keyboard-interactive") != NULL) {
 		if (libssh2_userauth_keyboard_interactive(session, username, &kbd_callback) == 0) {
 			RETURN_TRUE;
@@ -1355,6 +1398,7 @@ zend_function_entry ssh2_functions[] = {
 
 	PHP_FE(ssh2_auth_none,						NULL)
 	PHP_FE(ssh2_auth_password,					NULL)
+	PHP_FE(ssh2_auth_password_twofactor,		NULL)
 	PHP_FE(ssh2_auth_pubkey_file,				NULL)
 	PHP_FE(ssh2_auth_hostbased_file,			NULL)
 
