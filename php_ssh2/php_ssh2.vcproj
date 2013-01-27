@@ -117,7 +117,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="&quot;$(ProjectDir)/../&quot;;&quot;$(PHP_SOURCE_FOLDER)/TSRM&quot;;&quot;$(PHP_SOURCE_FOLDER)/win32&quot;;&quot;$(PHP_SOURCE_FOLDER)/Zend&quot;;&quot;$(PHP_SOURCE_FOLDER)/main&quot;;&quot;$(PHP_SOURCE_FOLDER)&quot;;&quot;$(LIBSSH2_SOURCE_FOLDER)/../include&quot;"
-				PreprocessorDefinitions="WIN32;ZTS;ZEND_WIN32;PHP_WIN32;ZEND_DEBUG=1"
+				PreprocessorDefinitions="WIN32;ZTS;ZEND_WIN32;PHP_WIN32;ZEND_DEBUG=0;COMPILE_DL_SSH2"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
