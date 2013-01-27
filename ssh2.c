@@ -45,6 +45,14 @@
 #define MD5_DIGEST_LENGTH	16
 #endif
 
+#ifdef _MSC_VER
+#define VOID_P (void*)
+#define CHAR_P (char*)
+#else
+#define VOID_P
+#define CHAR_P
+#endif
+
 /* True global resources - no need for thread safety here */
 int le_ssh2_session;
 int le_ssh2_listener;
@@ -670,7 +678,7 @@ PHP_FUNCTION(ssh2_auth_pubkey_file)
 #ifndef _MSC_VER
 	struct passwd *pws;
 #else
-	WCHAR homepath[MAX_PATH];
+	char homepath[MAX_PATH];
 #endif
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rsss|s", &zsession,	&username, &username_len,
@@ -691,17 +699,19 @@ PHP_FUNCTION(ssh2_auth_pubkey_file)
 #ifndef _MSC_VER
 	pws = getpwuid(geteuid());
 #else
-	SHGetFolderPathW(NULL, CSIDL_PROFILE, NULL, 0, homepath);
+	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, homepath);
 #endif
 	if (pubkey_len >= 2 && *pubkey == '~' && *(pubkey+1) == '/') {
 #ifndef _MSC_VER
 		newpath = emalloc(strlen(pws->pw_dir) + strlen(pubkey));
 		strcpy(newpath, pws->pw_dir);
-#else
-		newpath = emalloc(strlen(homepath) + strlen(pubkey));
-		strcpy(newpath, homepath);
-#endif
 		strcat(newpath, pubkey+1);
+#else
+		int newpath_size = strlen(homepath) + strlen(pubkey);
+		newpath = emalloc(newpath_size);
+		strcpy_s(newpath, newpath_size, homepath);
+		strcat_s(newpath, newpath_size, pubkey+1); 
+#endif
 		efree(pubkey);
 		pubkey = newpath;
 	}
@@ -709,11 +719,13 @@ PHP_FUNCTION(ssh2_auth_pubkey_file)
 #ifndef _MSC_VER
 		newpath = emalloc(strlen(pws->pw_dir) + strlen(privkey));
 		strcpy(newpath, pws->pw_dir);
-#else
-		newpath = emalloc(strlen(homepath) + strlen(privkey));
-		strcpy(newpath, homepath);
-#endif
 		strcat(newpath, privkey+1);
+#else
+		int newpath_size = strlen(homepath) + strlen(privkey);
+		newpath = emalloc(newpath_size);
+		strcpy_s(newpath, newpath_size, homepath);
+		strcat_s(newpath, newpath_size, privkey+1);
+#endif
 		efree(privkey);
 		privkey = newpath;
 	}
@@ -1082,7 +1094,7 @@ PHP_FUNCTION(ssh2_publickey_add)
 
 		for(i = 0; i < num_attrs; i++) {
 			/* name doesn't need freeing */
-			efree(attrs[i].value);
+			efree( VOID_P attrs[i].value);
 		}
 		efree(attrs);
 	}
@@ -1141,8 +1153,8 @@ PHP_FUNCTION(ssh2_publickey_list)
 		MAKE_STD_ZVAL(key);
 		array_init(key);
 
-		add_assoc_stringl(key, "name", keys[i].name, keys[i].name_len, 1);
-		add_assoc_stringl(key, "blob", keys[i].blob, keys[i].blob_len, 1);
+		add_assoc_stringl(key, "name", CHAR_P keys[i].name, keys[i].name_len, 1);
+		add_assoc_stringl(key, "blob", CHAR_P keys[i].blob, keys[i].blob_len, 1);
 
 		MAKE_STD_ZVAL(attrs);
 		array_init(attrs);
