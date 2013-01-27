@@ -28,6 +28,10 @@
 #include "php_ssh2.h"
 #include "main/php_network.h"
 
+#ifdef _MSC_VER
+#include <shlobj.h>
+#endif
+
 #if (OPENSSL_VERSION_NUMBER >= 0x00908000L)
 #include <openssl/applink.c>
 #endif
@@ -663,7 +667,11 @@ PHP_FUNCTION(ssh2_auth_pubkey_file)
 	char *username, *pubkey, *privkey, *passphrase = NULL;
 	int username_len, pubkey_len, privkey_len, passphrase_len;
 	char *newpath;
+#ifndef _MSC_VER
 	struct passwd *pws;
+#else
+	WCHAR homepath[MAX_PATH];
+#endif
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rsss|s", &zsession,	&username, &username_len,
 																				&pubkey, &pubkey_len,
@@ -680,17 +688,31 @@ PHP_FUNCTION(ssh2_auth_pubkey_file)
 
 	// Explode '~/paths' stopgap fix because libssh2 does not accept tilde for homedir
 	// This should be ifdef'ed when a fix is available to support older libssh2 versions
+#ifndef _MSC_VER
 	pws = getpwuid(geteuid());
+#else
+	SHGetFolderPathW(NULL, CSIDL_PROFILE, NULL, 0, homepath);
+#endif
 	if (pubkey_len >= 2 && *pubkey == '~' && *(pubkey+1) == '/') {
+#ifndef _MSC_VER
 		newpath = emalloc(strlen(pws->pw_dir) + strlen(pubkey));
 		strcpy(newpath, pws->pw_dir);
+#else
+		newpath = emalloc(strlen(homepath) + strlen(pubkey));
+		strcpy(newpath, homepath);
+#endif
 		strcat(newpath, pubkey+1);
 		efree(pubkey);
 		pubkey = newpath;
 	}
 	if (privkey_len >= 2 && *privkey == '~' && *(privkey+1) == '/') {
+#ifndef _MSC_VER
 		newpath = emalloc(strlen(pws->pw_dir) + strlen(privkey));
 		strcpy(newpath, pws->pw_dir);
+#else
+		newpath = emalloc(strlen(homepath) + strlen(privkey));
+		strcpy(newpath, homepath);
+#endif
 		strcat(newpath, privkey+1);
 		efree(privkey);
 		privkey = newpath;

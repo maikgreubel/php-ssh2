@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="local"
+	>
+	<UserMacro
+		Name="PHP_SOURCE_FOLDER"
+		Value="D:\Workspaces\VisualStudio\php-5.4.7"
+	/>
+	<UserMacro
+		Name="PHP_BIN_FOLDER"
+		Value="D:\PHP\5.4.7"
+	/>
+	<UserMacro
+		Name="LIBSSL2_SOURCE_FOLDER"
+		Value="D:\Workspaces\VisualStudio\libssh2-1.4.3\win32"
+	/>
+	<UserMacro
+		Name="LIBSSH2_SOURCE_FOLDER"
+		Value="D:\Workspaces\VisualStudio\libssh2-1.4.3\win32"
+	/>
+	<UserMacro
+		Name="OPENSSL_BIN_FOLDER"
+		Value="D:\Projekte\openssl"
+	/>
+</VisualStudioPropertySheet>

@@ -25,6 +25,7 @@
 #include "php.h"
 #include "php_ssh2.h"
 
+
 /* **********************
    * channel_stream_ops *
    ********************** */
@@ -1086,6 +1087,10 @@ PHP_FUNCTION(ssh2_scp_send)
 	long create_mode = 0644;
 	php_stream_statbuf ssb;
 	int argc = ZEND_NUM_ARGS();
+#ifdef _MSC_VER
+	unsigned int sent = 0;
+	unsigned int justsent = 0;
+#endif
 
 	if (zend_parse_parameters(argc TSRMLS_CC, "rss|l", &zsession, &local_filename, &local_filename_len, 
 													   &remote_filename, &remote_filename_len, &create_mode) == FAILURE) {
@@ -1134,8 +1139,10 @@ PHP_FUNCTION(ssh2_scp_send)
 			RETURN_FALSE;
 		}
 
+#ifndef _MSC_VER
 		size_t sent = 0;
 		size_t justsent = 0;
+#endif
 
 		while (bytesread - sent > 0) {
 			if ((justsent = libssh2_channel_write(remote_file, (buffer + sent), bytesread - sent)) < 0) {
